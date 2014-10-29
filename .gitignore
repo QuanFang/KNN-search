@@ -31,5 +31,8 @@
 *.pyc
 
 # Data files
+/data/
 *.bin
 
+# DS_Store
+*.DS_Store
