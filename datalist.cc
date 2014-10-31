@@ -1,11 +1,18 @@
 #include "datalist.h"
 #include <iostream>
-#include <fstream.h>
+#include <fstream>
 
 using namespace std;
 
-float byte_swap_float32(float temp){
-    return ((temp >> 24) | ((temp & 0x00ff0000) >> 8) | ((temp & 0x0000ff00) << 8) | (temp << 24));
+float byte_swap_float32(char *buf){
+    char temp = buf[0];
+    buf[0] = buf[3];
+    buf[3] = temp;
+    temp = buf[2];
+    buf[2] = buf[1];
+    buf[1] = temp;
+
+    return *(float *)buf;
 }
 
 DataList::DataList(){
@@ -36,14 +43,14 @@ bool DataList::set_size(const int size){
     return true;
 }
 
-inline float DataList::get_value(const int i){
+float DataList::get_value(const int i){
     if(i < 0 || i >= data_size_ || data_list_ == NULL){
         return 0.0;
     }
     return data_list_[i];
 }
 
-inline bool DataList::set_value(const int i, const float v){
+bool DataList::set_value(const int i, const float v){
     if(i < 0 || i >= data_size_ || data_list_ == NULL){
         return false;
     }
@@ -51,21 +58,23 @@ inline bool DataList::set_value(const int i, const float v){
     return true;
 }
 
-inline bool DataList::get_size(){
+int DataList::get_size(){
     return data_size_;
 }
 
 DataList* load_data_from_file(const char *filename){
     ifstream file(filename, ios::in|ios::binary|ios::ate);
-    int data_size = file.tellg() / sizeof(float);
-    file.seekg(0, ios:beg);
+    int data_size = file.tellg() / sizeof(float) / 8;
+    file.seekg(0, ios::beg);
 
+    cout << data_size << endl;
+    
     DataList *list = new DataList(data_size);
     char *buf = new char[sizeof(float)];
 
     for(int i = 0;i < data_size;i++){
         file.read(buf, sizeof(float));
-        list->set_value(i, byte_swap_float32(*(float *)buf));
+        list->set_value(i, byte_swap_float32(buf));
     }
     
     delete [] buf;
