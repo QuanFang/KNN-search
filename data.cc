@@ -27,19 +27,34 @@ Data::Data(int d, int s){
     assert((d == DIMENSION) && (s > 0) && (s <= 1000000));
     dimension_ = d;
     size_ = s;
-    data_ = new float*[size_];
+    data_ = new MyVector[size_];
     for(int i = 0;i < size_;++i){
-        data_[i] = new float[dimension_];
+        data_[i].vector_ = new float[dimension_];
     }
 }
 
 Data::~Data(){
     if(data_ != NULL){
         for(int i = 0;i < size_;++i){
-            delete [] data_[i];
+            delete [] data_[i].vector_;
         }
         delete [] data_;
     }
+}
+
+float *Data::get_value(int i){
+    assert((data_ != NULL) && (i >= 0) && (i < size_));
+    return data_[i].vector_;
+}
+
+float Data::get_value(int i, int j){
+    assert((j >= 0) && (j < DIMENSION));
+    return get_value(i)[j];
+}
+
+MyVector *Data::get_vector(int i){
+    assert((data_ != NULL) && (i >= 0) && (i < size_));
+    return (data_ + i);
 }
 
 Data* load_data_from_file(const char *filename){
@@ -51,9 +66,10 @@ Data* load_data_from_file(const char *filename){
     char *buf = new char[sizeof(float)];
 
     for(int i = 0;i < data_size;i++){
+        data->data_[i].index_ = i;
         for(int j = 0;j < DIMENSION;++j){
             file.read(buf, sizeof(float));
-            data->data_[i][j] = byte_swap_float32(buf);
+            data->data_[i].vector_[j] = byte_swap_float32(buf);
         }
     }
     
