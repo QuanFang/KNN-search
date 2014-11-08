@@ -14,6 +14,7 @@ int main(int argc, char *argv[]){
         int width = atoi(argv[5]); //width of p-stable hashing
         float d_mean = atof(argv[6]); //mean value of normal distribution
         float d_deviation = atof(argv[7]); //standard deviation of normal distribution
+        int k_nearest_neighbor = atoi(argv[8]);
         
         Data *data = load_data_from_file(filename);  //load data
         PProjections *projections = get_random_p_projections(projections_num, projection_size, width, d_mean, d_deviation); //generate projection randomly
@@ -28,7 +29,8 @@ int main(int argc, char *argv[]){
     else{
         char *filename = argv[2]; //data file path
         int projections_num = atoi(argv[3]); //l in the paper, number of projections
-        int projection_size = atoi(argv[4]); //k in the paper, size of a projection
+        int projection_size = atoi(argv[4]); //k in the paper, size of a projections
+        int k_nearest_neighbor = atoi(argv[5]);
         
         Data *data = load_data_from_file(filename);  //load data
         Projections *projections = get_random_projections(projections_num, projection_size, 1000); //randomly generate projection coordinates
