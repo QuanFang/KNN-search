@@ -31,8 +31,6 @@ int main(int argc, char *argv[]){
 
 
     set<MyVector *> query_result = get_near_vectors(hash_functions, data->get_vector(0), projections); //example of query, returns a set of vectors
-    
-
     MyVector* a = data->get_vector(0);
     int i;
     pair<int*, int> answer = myOldKNN(a,&query_result,k_nearest_neighbour);
