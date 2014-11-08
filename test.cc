@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <string>
 
 using namespace std;
 
@@ -18,98 +19,35 @@ int myNewGetPosition(double* array,double d,int l,int r);
 void intToBin(int *i, char *buf);
 
 int main(int argc, char *argv[]){
-    char *mode = argv[1];
-    if(mode[0] == 'p' or mode [0] == 'P'){
-        char *filename = argv[2]; //data file path
-        int projections_num = atoi(argv[3]); //l in the paper, number of projections
-        int projection_size = atoi(argv[4]); //k in the paper, size of a projections
-        int width = atoi(argv[5]); //width of p-stable hashing
-        float d_mean = atof(argv[6]); //mean value of normal distribution
-        float d_deviation = atof(argv[7]); //standard deviation of normal distribution
-        int k_nearest_neighbor = atoi(argv[8]);
-        
-        Data *data = load_data_from_file(filename);  //load data
-        PProjections *projections = get_random_p_projections(projections_num, projection_size, width, d_mean, d_deviation); //generate projection randomly
-        PHashFunctions *hash_functions = new PHashFunctions(projections_num, projection_size); //init hash functions
+    char *filename = argv[1];
+    Data *data = load_data_from_file(filename);
+    Data *test_data = load_data_from_file("./test.bin");
 
-        p_hash_insert(hash_functions, data, projections);//apply hash funtions to the data
-        
-        //set<MyVector *> query_result = get_p_near_vectors(hash_functions, data->get_vector(0), projections); 
-        
-        Data *test_data = load_data_from_file("./test.bin");
-        ofstream result_file("./result.bin", ios::out|ios::binary);
-        
-        char *buf = new char[sizeof(int)];
-        for(int i = 0;i < test_data->size_;++i){
-            set<MyVector *> query_set = get_p_near_vectors(hash_functions, test_data->get_vector(i), projections); 
-            pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, k_nearest_neighbor);
-            for(int j = 0;j < 100;++j){
-                if(j < query_result.second){
-                    intToBin(&(query_result.first[j]), buf);
-                    result_file.write(buf, sizeof(int));
-                }
-                else{
-                    int temp = -1;
-                    intToBin(&temp, buf);
-                    result_file.write(buf, sizeof(int));
-                }
-            }
-            delete [] query_result.first;
-        }
-        delete [] buf;
-        result_file.close();
+    set<MyVector *> query_set = set<MyVector *>();
+    for(int i = 0;i < data->size_;++i){
+        query_set.insert(data->get_vector(i));
+    }
+
+    char *buf = new char[sizeof(int)];
+    
+    ofstream result_file;
+    if(data->size_ == 10000){
+        result_file.open("10000.exa", ios::out|ios::binary);
+    }
+    else if(data->size_ == 100000){
+        result_file.open("100000.exa", ios::out|ios::binary);
     }
     else{
-        char *filename = argv[2]; //data file path
-        int projections_num = atoi(argv[3]); //l in the paper, number of projections
-        int projection_size = atoi(argv[4]); //k in the paper, size of a projections
-        int k_nearest_neighbor = atoi(argv[5]);
-        
-        Data *data = load_data_from_file(filename);  //load data
-        Projections *projections = get_random_projections(projections_num, projection_size, 1000); //randomly generate projection coordinates
-        HashFunctions *hash_functions = new HashFunctions(projections_num, projection_size); //init hash functions
-
-        hash_insert(hash_functions, data, projections);//apply hash funtions to the data
-        
-        //set<MyVector *> query_result = get_near_vectors(hash_functions, data->get_vector(0), projections);
-        
-        Data *test_data = load_data_from_file("./test.bin");
-        ofstream result_file("./result.bin", ios::out|ios::binary);
-        
-        char *buf = new char[sizeof(int)];
-        for(int i = 0;i < test_data->size_;++i){
-            set<MyVector *> query_set = get_near_vectors(hash_functions, test_data->get_vector(i), projections); 
-            pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, k_nearest_neighbor);
-            for(int j = 0;j < 100;++j){
-                if(j < query_result.second){
-                    intToBin(&(query_result.first[j]), buf);
-                    result_file.write(buf, sizeof(int));
-                }
-                else{
-                    int temp = -1;
-                    intToBin(&temp, buf);
-                    result_file.write(buf, sizeof(int));
-                }
-            }
-            delete [] query_result.first;
-        }
-        delete [] buf;
-        result_file.close();
+        result_file.open("1000000.exa", ios::out|ios::binary);
     }
-
-    /*MyVector* a = data->get_vector(0);*/
-    //int i;
-    //pair<int*, int> answer = myOldKNN(a,&query_result,k_nearest_neighbour);
-    //for (i = 0;i < answer.second;i++){
-        //cout<<" "<<answer.first[i];
-    //}
-    //cout<<endl;
-
-    //pair<int*, int> newAnswer = myNewKNN(a,&query_result,k_nearest_neighbour);
-    //for (i = 0;i < answer.second;i++){
-        //cout<<" "<<newAnswer.first[i];
-    /*}*/
-
+    
+    for(int i = 0;i < test_data->size_;++i){
+        pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, 100);
+        for(int j = 0;j < 100;++j){
+            intToBin(&(query_result.first[j]), buf);
+            result_file.write(buf, sizeof(int));
+        }
+    }
     return 0;
 }
 

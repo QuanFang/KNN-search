@@ -12,3 +12,9 @@ data.o: data.cc data.h
 
 clean:
 	rm *.o dataLoader
+
+test: test.o data.o
+	g++ -o test.out test.o data.o
+
+test.o: test.cc
+	g++ -c test.cc

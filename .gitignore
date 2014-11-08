@@ -33,6 +33,7 @@
 # Data files
 /data/
 *.bin
+*.exa
 
 # DS_Store
 *.DS_Store
