@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sys/time.h>
 
 using namespace std;
 
@@ -16,6 +17,7 @@ void myNewQuickSort(int* indexArray,double* disArray,int l,int r);
 void testMyNewKNN();
 int myNewGetPosition(double* array,double d,int l,int r);
 void intToBin(int *i, char *buf);
+long getSystemTime();
 
 int main(int argc, char *argv[]){
     char *mode = argv[1];
@@ -39,9 +41,12 @@ int main(int argc, char *argv[]){
         Data *test_data = load_data_from_file("./test.bin");
         ofstream result_file("./result.bin", ios::out|ios::binary);
         
+        long begin_time = getSystemTime();
+        
         char *buf = new char[sizeof(int)];
         for(int i = 0;i < test_data->size_;++i){
             set<MyVector *> query_set = get_p_near_vectors(hash_functions, test_data->get_vector(i), projections); 
+            //cout << query_set.size() << endl;
             pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, k_nearest_neighbor);
             for(int j = 0;j < 100;++j){
                 if(j < query_result.second){
@@ -57,9 +62,11 @@ int main(int argc, char *argv[]){
             delete [] query_result.first;
         }
         delete [] buf;
+        long end_time = getSystemTime();
+        cout << "平均查询时间为：" << (float)(end_time - begin_time) / 100 << "ms" << endl;
         result_file.close();
     }
-    else{
+    else if(mode[0] == 'n' or mode [0] == 'N'){
         char *filename = argv[2]; //data file path
         int projections_num = atoi(argv[3]); //l in the paper, number of projections
         int projection_size = atoi(argv[4]); //k in the paper, size of a projections
@@ -76,6 +83,8 @@ int main(int argc, char *argv[]){
         Data *test_data = load_data_from_file("./test.bin");
         ofstream result_file("./result.bin", ios::out|ios::binary);
         
+        long begin_time = getSystemTime();
+
         char *buf = new char[sizeof(int)];
         for(int i = 0;i < test_data->size_;++i){
             set<MyVector *> query_set = get_near_vectors(hash_functions, test_data->get_vector(i), projections); 
@@ -94,21 +103,36 @@ int main(int argc, char *argv[]){
             delete [] query_result.first;
         }
         delete [] buf;
+        long end_time = getSystemTime();
+        cout << "平均查询时间为：" << (float)(end_time - begin_time) / 100 << "ms" << endl;
         result_file.close();
     }
+    else{
+        char *filename = argv[2];
+        int k_nearest_neighbor = atoi(argv[3]);
+        Data *data = load_data_from_file(filename);
+        Data *test_data = load_data_from_file("./test.bin");
 
-    /*MyVector* a = data->get_vector(0);*/
-    //int i;
-    //pair<int*, int> answer = myOldKNN(a,&query_result,k_nearest_neighbour);
-    //for (i = 0;i < answer.second;i++){
-        //cout<<" "<<answer.first[i];
-    //}
-    //cout<<endl;
+        set<MyVector *> query_set = set<MyVector *>();
+        for(int i = 0;i < data->size_;++i){
+            query_set.insert(data->get_vector(i));
+        }
 
-    //pair<int*, int> newAnswer = myNewKNN(a,&query_result,k_nearest_neighbour);
-    //for (i = 0;i < answer.second;i++){
-        //cout<<" "<<newAnswer.first[i];
-    /*}*/
+        char *buf = new char[sizeof(int)];
+        
+        ofstream result_file("./result.bin", ios::out|ios::binary);
+        long begin_time = getSystemTime();
+
+        for(int i = 0;i < test_data->size_;++i){
+            pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, 100);
+            for(int j = 0;j < 100;++j){
+                intToBin(&(query_result.first[j]), buf);
+                result_file.write(buf, sizeof(int));
+            }
+        }
+        long end_time = getSystemTime();
+        cout << "平均查询时间为：" << (float)(end_time - begin_time) / 100 << "ms" << endl;
+    }
 
     return 0;
 }
@@ -354,3 +378,12 @@ void intToBin(int *i, char *buf){
     buf[2] = *((char *)i + 1);
     buf[3] = *((char *)i);
 }
+
+long getSystemTime(){  
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    long t = tv.tv_sec;
+    t *= 1000;
+    t += tv.tv_usec/1000;
+    return t;
+}  

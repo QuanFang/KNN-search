@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sys/time.h>
 
 using namespace std;
 
@@ -17,6 +18,7 @@ void myNewQuickSort(int* indexArray,double* disArray,int l,int r);
 void testMyNewKNN();
 int myNewGetPosition(double* array,double d,int l,int r);
 void intToBin(int *i, char *buf);
+long getSystemTime();
 
 int main(int argc, char *argv[]){
     char *filename = argv[1];
@@ -30,24 +32,28 @@ int main(int argc, char *argv[]){
 
     char *buf = new char[sizeof(int)];
     
-    ofstream result_file;
-    if(data->size_ == 10000){
-        result_file.open("10000.exa", ios::out|ios::binary);
-    }
-    else if(data->size_ == 100000){
-        result_file.open("100000.exa", ios::out|ios::binary);
-    }
-    else{
-        result_file.open("1000000.exa", ios::out|ios::binary);
-    }
+    /*ofstream result_file;*/
+    //if(data->size_ == 10000){
+        //result_file.open("10000.exa", ios::out|ios::binary);
+    //}
+    //else if(data->size_ == 100000){
+        //result_file.open("100000.exa", ios::out|ios::binary);
+    //}
+    //else{
+        //result_file.open("1000000.exa", ios::out|ios::binary);
+    /*}*/
     
+    long begin_time = getSystemTime();
+
     for(int i = 0;i < test_data->size_;++i){
         pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, 100);
         for(int j = 0;j < 100;++j){
             intToBin(&(query_result.first[j]), buf);
-            result_file.write(buf, sizeof(int));
+            //result_file.write(buf, sizeof(int));
         }
     }
+    long end_time = getSystemTime();
+    cout << end_time - begin_time << endl;
     return 0;
 }
 
@@ -292,3 +298,12 @@ void intToBin(int *i, char *buf){
     buf[2] = *((char *)i + 1);
     buf[3] = *((char *)i);
 }
+
+long getSystemTime(){  
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    long t = tv.tv_sec;
+    t *= 1000;
+    t += tv.tv_usec/1000;
+    return t;
+}  

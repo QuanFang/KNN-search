@@ -157,7 +157,6 @@ bool PHashFunctions::insert(string hash_key, MyVector *value, int index){
     }
     else{
         search_result->second.push_back(value);
-        //cout << search_result->second.size() << endl;
     }
     return true;
 }
@@ -205,7 +204,6 @@ string gen_p_hash_key(float *data_array, p_function *projection, int p_length, f
         n_str << temp;
         hash_key += "," + n_str.str();
     }
-    cout << hash_key << endl;
     return hash_key;
 }
 
