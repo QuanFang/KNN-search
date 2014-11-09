@@ -74,8 +74,9 @@ int main(int argc, char *argv[]){
         }
         delete [] buf;
         long end_time = getSystemTime();
-        cout << "平均查询时间为：" << (float)(end_time - begin_time) / 100 << "ms" << endl;
-        cout << "准确率为：" << (float)hit_count / 10000 << endl;
+        cout << projections_num << "," << projection_size << "," << width << "," << (float)(end_time - begin_time) / 100 << "," << (float)hit_count / 10000 << endl;
+        /*cout << "平均查询时间为：" << (float)(end_time - begin_time) / 100 << "ms" << endl;*/
+        /*cout << "准确率为：" << (float)hit_count / 10000 << endl;*/
         result_file.close();
     }
     else if(mode[0] == 'n' or mode [0] == 'N'){
@@ -126,8 +127,9 @@ int main(int argc, char *argv[]){
         }
         delete [] buf;
         long end_time = getSystemTime();
-        cout << "平均查询时间为：" << (float)(end_time - begin_time) / 100 << "ms" << endl;
-        cout << "准确率为：" << (float)hit_count / 10000 << endl;
+        cout << projections_num << "," << projection_size << "," << (float)(end_time - begin_time) / 100 << "," << (float)hit_count / 10000 << endl;
+        /*cout << "平均查询时间为：" << (float)(end_time - begin_time) / 100 << "ms" << endl;*/
+        /*cout << "准确率为：" << (float)hit_count / 10000 << endl;*/
         result_file.close();
     }
     else{
@@ -153,7 +155,8 @@ int main(int argc, char *argv[]){
             }
         }
         long end_time = getSystemTime();
-        cout << "平均查询时间为：" << (float)(end_time - begin_time) / 100 << "ms" << endl;
+        cout << (float)(end_time - begin_time) / 100 << endl;
+        //cout << "平均查询时间为：" << (float)(end_time - begin_time) / 100 << "ms" << endl;
     }
 
     return 0;
