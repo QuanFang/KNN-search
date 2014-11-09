@@ -26,12 +26,9 @@ int main(int argc, char *argv[]){
         int projections_num = atoi(argv[3]); //l in the paper, number of projections
         int projection_size = atoi(argv[4]); //k in the paper, size of a projections
         int width = atoi(argv[5]); //width of p-stable hashing
-        float d_mean = atof(argv[6]); //mean value of normal distribution
-        float d_deviation = atof(argv[7]); //standard deviation of normal distribution
-        int k_nearest_neighbor = atoi(argv[8]);
         
         Data *data = load_data_from_file(filename);  //load data
-        PProjections *projections = get_random_p_projections(projections_num, projection_size, width, d_mean, d_deviation); //generate projection randomly
+        PProjections *projections = get_random_p_projections(projections_num, projection_size, width, 0, 1); //generate projection randomly
         PHashFunctions *hash_functions = new PHashFunctions(projections_num, projection_size); //init hash functions
 
         p_hash_insert(hash_functions, data, projections);//apply hash funtions to the data
@@ -47,7 +44,7 @@ int main(int argc, char *argv[]){
         for(int i = 0;i < test_data->size_;++i){
             set<MyVector *> query_set = get_p_near_vectors(hash_functions, test_data->get_vector(i), projections); 
             //cout << query_set.size() << endl;
-            pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, k_nearest_neighbor);
+            pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, 100);
             for(int j = 0;j < 100;++j){
                 if(j < query_result.second){
                     intToBin(&(query_result.first[j]), buf);
@@ -70,7 +67,6 @@ int main(int argc, char *argv[]){
         char *filename = argv[2]; //data file path
         int projections_num = atoi(argv[3]); //l in the paper, number of projections
         int projection_size = atoi(argv[4]); //k in the paper, size of a projections
-        int k_nearest_neighbor = atoi(argv[5]);
         
         Data *data = load_data_from_file(filename);  //load data
         Projections *projections = get_random_projections(projections_num, projection_size, 1000); //randomly generate projection coordinates
@@ -88,7 +84,7 @@ int main(int argc, char *argv[]){
         char *buf = new char[sizeof(int)];
         for(int i = 0;i < test_data->size_;++i){
             set<MyVector *> query_set = get_near_vectors(hash_functions, test_data->get_vector(i), projections); 
-            pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, k_nearest_neighbor);
+            pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, 100);
             for(int j = 0;j < 100;++j){
                 if(j < query_result.second){
                     intToBin(&(query_result.first[j]), buf);
@@ -109,7 +105,6 @@ int main(int argc, char *argv[]){
     }
     else{
         char *filename = argv[2];
-        int k_nearest_neighbor = atoi(argv[3]);
         Data *data = load_data_from_file(filename);
         Data *test_data = load_data_from_file("./test.bin");
 

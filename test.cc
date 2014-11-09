@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <sys/time.h>
 
 using namespace std;
@@ -19,41 +18,144 @@ void testMyNewKNN();
 int myNewGetPosition(double* array,double d,int l,int r);
 void intToBin(int *i, char *buf);
 long getSystemTime();
+void build_exact_results(unordered_map<int, int> *exact_results, const char *filename);
+int get_hit_count(unordered_map<int, int> exact_result, pair<int *, int> query_result);
 
 int main(int argc, char *argv[]){
-    char *filename = argv[1];
-    Data *data = load_data_from_file(filename);
-    Data *test_data = load_data_from_file("./test.bin");
-
-    set<MyVector *> query_set = set<MyVector *>();
-    for(int i = 0;i < data->size_;++i){
-        query_set.insert(data->get_vector(i));
-    }
-
-    char *buf = new char[sizeof(int)];
-    
-    /*ofstream result_file;*/
-    //if(data->size_ == 10000){
-        //result_file.open("10000.exa", ios::out|ios::binary);
-    //}
-    //else if(data->size_ == 100000){
-        //result_file.open("100000.exa", ios::out|ios::binary);
-    //}
-    //else{
-        //result_file.open("1000000.exa", ios::out|ios::binary);
-    /*}*/
-    
-    long begin_time = getSystemTime();
-
-    for(int i = 0;i < test_data->size_;++i){
-        pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, 100);
-        for(int j = 0;j < 100;++j){
-            intToBin(&(query_result.first[j]), buf);
-            //result_file.write(buf, sizeof(int));
+    char *mode = argv[1];
+    unordered_map<int, int> *exact_results = new unordered_map<int, int>[100];
+    if(mode[0] == 'p' or mode [0] == 'P'){
+        char *filename = argv[2]; //data file path
+        int projections_num = atoi(argv[3]); //l in the paper, number of projections
+        int projection_size = atoi(argv[4]); //k in the paper, size of a projections
+        int width = atoi(argv[5]); //width of p-stable hashing
+        
+        Data *data = load_data_from_file(filename);  //load data
+        if(data->size_ == 10000){
+            build_exact_results(exact_results, "10000.exa");
         }
+        else if(data->size_ == 100000){
+            build_exact_results(exact_results, "100000.exa");
+        }
+        else{
+            build_exact_results(exact_results, "1000000.exa");
+        }
+        PProjections *projections = get_random_p_projections(projections_num, projection_size, width, 0, 1); //generate projection randomly
+        PHashFunctions *hash_functions = new PHashFunctions(projections_num, projection_size); //init hash functions
+
+        p_hash_insert(hash_functions, data, projections);//apply hash funtions to the data
+        
+        //set<MyVector *> query_result = get_p_near_vectors(hash_functions, data->get_vector(0), projections); 
+        
+        Data *test_data = load_data_from_file("./test.bin");
+        ofstream result_file("./result.bin", ios::out|ios::binary);
+        
+        long begin_time = getSystemTime();
+        
+        char *buf = new char[sizeof(int)];
+        int hit_count = 0;
+        for(int i = 0;i < test_data->size_;++i){
+            set<MyVector *> query_set = get_p_near_vectors(hash_functions, test_data->get_vector(i), projections); 
+            //cout << query_set.size() << endl;
+            pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, 100);
+            for(int j = 0;j < 100;++j){
+                if(j < query_result.second){
+                    intToBin(&(query_result.first[j]), buf);
+                    result_file.write(buf, sizeof(int));
+                }
+                else{
+                    int temp = -1;
+                    intToBin(&temp, buf);
+                    result_file.write(buf, sizeof(int));
+                }
+            }
+            hit_count += get_hit_count(exact_results[i], query_result);
+            delete [] query_result.first;
+        }
+        delete [] buf;
+        long end_time = getSystemTime();
+        cout << "平均查询时间为：" << (float)(end_time - begin_time) / 100 << "ms" << endl;
+        cout << "准确率为：" << (float)hit_count / 10000 << endl;
+        result_file.close();
     }
-    long end_time = getSystemTime();
-    cout << end_time - begin_time << endl;
+    else if(mode[0] == 'n' or mode [0] == 'N'){
+        char *filename = argv[2]; //data file path
+        int projections_num = atoi(argv[3]); //l in the paper, number of projections
+        int projection_size = atoi(argv[4]); //k in the paper, size of a projections
+        
+        Data *data = load_data_from_file(filename);  //load data
+        if(data->size_ == 10000){
+            build_exact_results(exact_results, "10000.exa");
+        }
+        else if(data->size_ == 100000){
+            build_exact_results(exact_results, "100000.exa");
+        }
+        else{
+            build_exact_results(exact_results, "1000000.exa");
+        }
+        Projections *projections = get_random_projections(projections_num, projection_size, 1000); //randomly generate projection coordinates
+        HashFunctions *hash_functions = new HashFunctions(projections_num, projection_size); //init hash functions
+
+        hash_insert(hash_functions, data, projections);//apply hash funtions to the data
+        
+        //set<MyVector *> query_result = get_near_vectors(hash_functions, data->get_vector(0), projections);
+        
+        Data *test_data = load_data_from_file("./test.bin");
+        ofstream result_file("./result.bin", ios::out|ios::binary);
+        
+        long begin_time = getSystemTime();
+
+        char *buf = new char[sizeof(int)];
+        int hit_count = 0;
+        for(int i = 0;i < test_data->size_;++i){
+            set<MyVector *> query_set = get_near_vectors(hash_functions, test_data->get_vector(i), projections); 
+            pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, 100);
+            for(int j = 0;j < 100;++j){
+                if(j < query_result.second){
+                    intToBin(&(query_result.first[j]), buf);
+                    result_file.write(buf, sizeof(int));
+                }
+                else{
+                    int temp = -1;
+                    intToBin(&temp, buf);
+                    result_file.write(buf, sizeof(int));
+                }
+            }
+            hit_count += get_hit_count(exact_results[i], query_result);
+            delete [] query_result.first;
+        }
+        delete [] buf;
+        long end_time = getSystemTime();
+        cout << "平均查询时间为：" << (float)(end_time - begin_time) / 100 << "ms" << endl;
+        cout << "准确率为：" << (float)hit_count / 10000 << endl;
+        result_file.close();
+    }
+    else{
+        char *filename = argv[2];
+        Data *data = load_data_from_file(filename);
+        Data *test_data = load_data_from_file("./test.bin");
+
+        set<MyVector *> query_set = set<MyVector *>();
+        for(int i = 0;i < data->size_;++i){
+            query_set.insert(data->get_vector(i));
+        }
+
+        char *buf = new char[sizeof(int)];
+        
+        ofstream result_file("./result.bin", ios::out|ios::binary);
+        long begin_time = getSystemTime();
+
+        for(int i = 0;i < test_data->size_;++i){
+            pair<int *, int> query_result = myNewKNN(test_data->get_vector(i), &query_set, 100);
+            for(int j = 0;j < 100;++j){
+                intToBin(&(query_result.first[j]), buf);
+                result_file.write(buf, sizeof(int));
+            }
+        }
+        long end_time = getSystemTime();
+        cout << "平均查询时间为：" << (float)(end_time - begin_time) / 100 << "ms" << endl;
+    }
+
     return 0;
 }
 
@@ -307,3 +409,38 @@ long getSystemTime(){
     t += tv.tv_usec/1000;
     return t;
 }  
+
+void build_exact_results(unordered_map<int, int> *exact_results, const char *filename){
+    ifstream result_file(filename, ios::in|ios::binary);
+    
+    char *buf = new char[sizeof(int)];
+    
+    for(int i = 0;i < 100;++i){
+        for(int j = 0;j < 100;++j){
+            result_file.read(buf, sizeof(int));
+            char temp = buf[3];
+            buf[3] = buf[0];
+            buf[0] = temp;
+            temp = buf[2];
+            buf[2] = buf[1];
+            buf[1] = temp;
+            int index = *((int *)buf);
+            exact_results[i].insert(make_pair(index, 1));
+        }
+    }
+    
+    delete [] buf;
+    return;
+}
+
+int get_hit_count(unordered_map<int, int> exact_result, pair<int *, int> query_result){
+    int hit_count = 0;
+    for(int i = 0;i < query_result.second;++i){
+        auto search = exact_result.find(query_result.first[i]);
+        if(search != exact_result.end()){
+            hit_count++;
+        }
+    }
+    
+    return hit_count;
+}
